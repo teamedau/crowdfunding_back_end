@@ -1,20 +1,26 @@
 from rest_framework import serializers
 from django.apps import apps
-
-class PledgeSerializer(serializers.ModelSerializer):
-    supporter = serializers.ReadOnlyField(source='supporter.id')
-
-    class Meta:
-        model = apps.get_model('fundraisers.Pledge')
-        fields = '__all__'
+from .models import Fundraiser, Pledge
 
 class FundraiserSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.id')
-    
+    supporters = serializers.SlugRelatedField(
+        many=True, slug_field= 'owner.id', read_only=True
+    )
     class Meta:
         model = apps.get_model('fundraisers.Fundraiser')
         fields = '__all__'
-        
+
+class PledgeSerializer(serializers.ModelSerializer):
+    supporter = serializers.ReadOnlyField(source='supporter.id')
+    class Meta:
+        model = apps.get_model('fundraisers.Pledge')
+        fields = '__all__'
+    def create(self, validated_data):
+        request = self.context['request']
+        validated_data['supporter'] = request.user
+        return super().create(validated_data)
+
 class FundraiserDetailSerializer(FundraiserSerializer):
     pledges = PledgeSerializer(many=True, read_only=True)
 
