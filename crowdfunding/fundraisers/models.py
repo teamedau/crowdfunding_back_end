@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-import secrets
+
 
 class Fundraiser(models.Model):
     title = models.CharField(max_length=200)
@@ -19,12 +19,6 @@ class Fundraiser(models.Model):
         blank=True,
         related_name='supported_fundraisers'
     )
-    invite_code = models.CharField(max_length=32, blank=True, unique=True, editable=False)
-
-    def save(self, *args, **kwargs):
-        if not self.invite_code:
-            self.invite_code = secrets.token_urlsafe(8)
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
@@ -45,10 +39,15 @@ class Pledge(models.Model):
         related_name='pledges'
     )
     type = models.CharField(max_length=10, choices=PLEDGE_TYPE, default='time')
-    amount = models.PositiveIntegerField()
+
+    # if chooses time as pledge type
+    hours = models.PositiveIntegerField(null=True, blank=True)
+
+    # if chooses words as pledge type
+    action = models.CharField(max_length=100, blank=True)
+
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        supporter = getattr(self, 'supporter', None)
-        return f"Pledge {self.pk} by {supporter}" if supporter else f"Pledge {self.pk}"
+        return f"Pledge {self.pk} ({self.type})"

@@ -6,8 +6,14 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from .models import CustomUser
 from .serializers import CustomUserSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 class CustomUserList(APIView):
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+    
     def get(self, request):
         users = CustomUser.objects.all()
         serializer = CustomUserSerializer(users, many=True)
@@ -27,6 +33,9 @@ class CustomUserList(APIView):
         )
 
 class CustomUserDetail(APIView):
+
+    permission_classes = [IsAuthenticated]
+
     def get_object(self, pk):
         try:
             return CustomUser.objects.get(pk=pk)
@@ -39,6 +48,9 @@ class CustomUserDetail(APIView):
         return Response(serializer.data)
     
 class CustomAuthToken(ObtainAuthToken):
+
+    permission_classes = [AllowAny]
+    
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(
             data=request.data,

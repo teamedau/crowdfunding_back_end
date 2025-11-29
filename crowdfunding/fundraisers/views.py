@@ -4,8 +4,11 @@ from rest_framework import status, permissions
 from rest_framework import viewsets
 from django.http import Http404
 from .models import Fundraiser, Pledge
-from .serializers import FundraiserSerializer, PledgeSerializer, FundraiserDetailSerializer
+from .serializers import FundraiserSerializer, PledgeSerializer, FundraiserDetailSerializer, InvitationSerializer
 from .permissions import IsOwnerOrReadOnly, IsSupporterOrReadOnly
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 
 class FundraiserList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -73,14 +76,22 @@ class FundraiserViewSet(viewsets.ModelViewSet):
 
 class PledgeList(APIView):
 
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         pledges = Pledge.objects.all()
         serializer = PledgeSerializer(pledges, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = PledgeSerializer(data=request.data)
+        serializer = PledgeSerializer(
+            data=request.data,
+            context={"request": request}
+            )
         if serializer.is_valid():
+            if not IsSupporterOrReadOnly.is_user_supporter_of_fundraiser(request.user, serializer.validated_data["fundraiser"]):
+            
+                return Response({'detail': 'You must be a supporter to create a pledge'}, status=status.HTTP_403_FORBIDDEN)
             serializer.save(supporter=request.user)
             return Response(
                 serializer.data,
@@ -109,3 +120,15 @@ class PledgeViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'You must be a supporter to create a pledge'}, status=status.HTTP_403_FORBIDDEN)
 
         return super().create(request, *args, **kwargs)
+    
+class InvitationView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    def post(self, request):
+        serializer = InvitationSerializer(data=request.data)
+        if serializer.is_valid():
+            fundraiser = get_object_or_404(Fundraiser, pk=serializer.validated_data["fundraiser"])
+            user = get_object_or_404(get_user_model(), pk=serializer.validated_data["user"])
+            self.check_object_permissions(self.request, fundraiser)
+            fundraiser.supporters.add(user)
+            return Response(status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
