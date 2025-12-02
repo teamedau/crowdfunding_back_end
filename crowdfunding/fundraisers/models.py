@@ -5,7 +5,8 @@ from django.db import models
 class Fundraiser(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
-    goal = models.PositiveIntegerField()
+    goal_text = models.CharField(max_length=255, blank=True)
+    goal_number = models.PositiveIntegerField(default=1)
     image = models.URLField(blank=True)
     is_open = models.BooleanField(default=True)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -22,6 +23,13 @@ class Fundraiser(models.Model):
 
     def __str__(self):
         return self.title
+    
+    @property
+    def progress(self):
+        total_pledges = self.pledges.count()
+        if self.goal_number:
+            return min(100, int((total_pledges / self.goal_number) * 100))
+        return 0
 
 class Pledge(models.Model):
     PLEDGE_TYPE = (

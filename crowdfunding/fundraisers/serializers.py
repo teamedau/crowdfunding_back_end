@@ -6,10 +6,23 @@ class FundraiserSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.id')
     supporters = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
+    progress = serializers.ReadOnlyField()
+
     class Meta:
         model = Fundraiser
-        fields = '__all__'
-
+        fields = [
+            'id',
+            'title',
+            'description',
+            'goal_text',
+            'goal_number',
+            'progress',
+            'image',
+            'is_open',
+            'date_created',
+            'owner',
+            'supporters',
+        ]
 
 class PledgeSerializer(serializers.ModelSerializer):
     supporter = serializers.ReadOnlyField(source='supporter.id')
@@ -55,6 +68,9 @@ class PledgeSerializer(serializers.ModelSerializer):
 
 class FundraiserDetailSerializer(FundraiserSerializer):
     pledges = PledgeSerializer(many=True, read_only=True)
+
+    class Meta(FundraiserSerializer.Meta):
+        fields = FundraiserSerializer.Meta.fields + ['pledges']
 
 class InvitationSerializer(serializers.Serializer):
     user = serializers.IntegerField()
