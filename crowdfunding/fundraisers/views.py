@@ -1,14 +1,15 @@
+from django.http import Http404
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from rest_framework import viewsets
-from django.http import Http404
-from .models import Fundraiser, Pledge
-from .serializers import FundraiserSerializer, PledgeSerializer, FundraiserDetailSerializer, InvitationSerializer
-from .permissions import IsOwnerOrReadOnly, IsSupporterOrReadOnly
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model
+
+from .models import Fundraiser, Pledge
+from .serializers import (FundraiserSerializer, FundraiserDetailSerializer, PledgeSerializer, InvitationSerializer)
+from .permissions import IsOwnerOrReadOnly, IsSupporterOrReadOnly
 
 class FundraiserList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -66,14 +67,6 @@ class FundraiserDetail(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-class FundraiserViewSet(viewsets.ModelViewSet):
-    queryset = Fundraiser.objects.all()
-    serializer_class = FundraiserSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)        
-
 class PledgeList(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -101,25 +94,6 @@ class PledgeList(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )    
-    
-class PledgeViewSet(viewsets.ModelViewSet):
-    queryset = Pledge.objects.all()
-    serializer_class = PledgeSerializer
-    permission_classes = [IsSupporterOrReadOnly]
-
-    def create(self, request, *args, **kwargs):
-        fundraiser_id = request.data.get('fundraiser')
-        if not fundraiser_id:
-            return Response({'detail': 'fundraiser id required'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            fundraiser = Fundraiser.objects.get(pk=fundraiser_id)
-        except Fundraiser.DoesNotExist:
-            return Response({'detail': 'fundraiser not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not IsSupporterOrReadOnly.is_user_supporter_of_fundraiser(request.user, fundraiser):
-            return Response({'detail': 'You must be a supporter to create a pledge'}, status=status.HTTP_403_FORBIDDEN)
-
-        return super().create(request, *args, **kwargs)
     
 class InvitationView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
