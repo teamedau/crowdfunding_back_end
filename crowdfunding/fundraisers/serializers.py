@@ -1,5 +1,17 @@
 from rest_framework import serializers
-from .models import Fundraiser, Pledge
+from django.db import models
+from .models import Fundraiser, Invitation, Pledge
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class MyModel(models.Model):
+    name = models.CharField(max_length=100)
+
+class MyModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyModel
+        fields = '__all__'
 
 
 class FundraiserSerializer(serializers.ModelSerializer):
@@ -75,3 +87,22 @@ class FundraiserDetailSerializer(FundraiserSerializer):
 class InvitationSerializer(serializers.Serializer):
     user = serializers.IntegerField()
     fundraiser = serializers.IntegerField()
+
+class UserSearchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+
+class InvitationSerializer(serializers.ModelSerializer):
+    invited_user = UserSearchSerializer(read_only=True)
+    invited_by = UserSearchSerializer(read_only=True)
+    fundraiser_title = serializers.CharField(source='fundraiser.title', read_only=True)
+    
+    class Meta:
+        model = Invitation
+        fields = ['id', 'fundraiser', 'fundraiser_title', 'invited_user', 'invited_by', 'status', 'created_at']
+        read_only_fields = ['id', 'created_at', 'invited_by']
+
+class CreateInvitationSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    fundraiser_id = serializers.IntegerField()

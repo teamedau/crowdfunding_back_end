@@ -7,7 +7,7 @@ class Fundraiser(models.Model):
     description = models.TextField()
     goal_text = models.CharField(max_length=255, blank=True)
     goal_number = models.PositiveIntegerField(default=1)
-    image = models.URLField(blank=True)
+    image = models.URLField(blank=True, default='https://www.canva.com/design/DAHA4YIbn4g/yhmgguDKjZ76v8qj67dEUw/view?utm_content=DAHA4YIbn4g&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h95236c5ce9')
     is_open = models.BooleanField(default=True)
     date_created = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(
@@ -59,3 +59,35 @@ class Pledge(models.Model):
 
     def __str__(self):
         return f"Pledge {self.pk} ({self.type})"
+    
+class Invitation(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    )
+    
+    fundraiser = models.ForeignKey(
+        'Fundraiser',
+        on_delete=models.CASCADE,
+        related_name='invitations'
+    )
+    invited_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='received_invitations'
+    )
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_invitations'
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('fundraiser', 'invited_user')
+    
+    def __str__(self):
+        return f"Invitation to {self.invited_user.username} for {self.fundraiser.title}"

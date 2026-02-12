@@ -5,6 +5,10 @@ urlpatterns = [
     path('fundraisers/', views.FundraiserList.as_view()),
     path('fundraisers/<int:pk>/', views.FundraiserDetail.as_view()),
     path('pledges/', views.PledgeList.as_view()),
-    path('invite/', views.InvitationView.as_view())
+    path('invite/', views.InvitationView.as_view()),
+    path('fundraiser/', views.FundraiserUserView.as_view()),
+    path('search-users/', views.UserSearchView.as_view()),
+    path('my-invitations/', views.MyInvitationsView.as_view()),
+    path('invitations/<int:pk>/action/', views.InvitationActionView.as_view()),
 ]
 
