@@ -34,6 +34,7 @@ class FundraiserSerializer(serializers.ModelSerializer):
             'date_created',
             'owner',
             'supporters',
+            'checklist'
         ]
 
 class PledgeSerializer(serializers.ModelSerializer):

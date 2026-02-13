@@ -20,6 +20,7 @@ class Fundraiser(models.Model):
         blank=True,
         related_name='supported_fundraisers'
     )
+    checklist = models.JSONField(default=list, blank=True, help_text="List of tasks for the fundraiser")
 
     def __str__(self):
         return self.title
